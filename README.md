@@ -26,24 +26,25 @@ npm run typecheck
 
 Alle Tabellen liegen im eigenen Schema `kommentar_dm` im Supabase-Projekt des CRM. Die App legt Schema und Tabellen beim ersten Start selbst an und berührt nichts anderes. Das Schema ist nicht über Supabases öffentliche API erreichbar, solange du es dort nicht unter **Settings → API → Exposed schemas** einträgst (nicht tun).
 
-`DATABASE_URL` aus Supabase: **Connect → Connection string → Session pooler** (Port 5432, funktioniert mit IPv4). Das Passwort wird dort eingesetzt; Sonderzeichen im Passwort müssen URL-kodiert sein (`@` → `%40`).
+`DATABASE_URL` aus Supabase: **Connect → Connection string**. Für Vercel den **Transaction pooler** (Port 6543), für einen dauerhaft laufenden Server (Railway) den **Session pooler** (Port 5432); beide funktionieren mit IPv4. Das Passwort wird dort eingesetzt; Sonderzeichen im Passwort müssen URL-kodiert sein (`@` → `%40`).
 
-## Live schalten auf Railway (ca. 5 €/Monat)
+## Live schalten auf Vercel
 
-1. Den Code in ein privates GitHub-Repository legen.
-2. Auf railway.com ein neues Projekt anlegen: **Deploy from GitHub repo**. Eine Railway-Datenbank ist nicht nötig.
-3. Beim App-Dienst unter **Variables** eintragen:
-   - `DATABASE_URL` → Supabase Session-Pooler-Adresse (siehe oben)
-   - `APP_URL` → die Railway-Adresse (Settings → Networking → Generate Domain)
-   - `ADMIN_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `WEBHOOK_VERIFY_TOKEN` → neue Zufallswerte (`openssl rand -hex 32`)
+Hinweis: Der Gratis-Tarif (Hobby) ist laut Vercel für nicht-kommerzielle Nutzung gedacht. Geschäftliche Nutzung ist dort formal nicht vorgesehen; wer sicher gehen will, nimmt Pro oder Railway.
+
+1. Auf vercel.com **Add New → Project**, das GitHub-Repo importieren (Framework: Next.js, wird erkannt).
+2. Unter **Environment Variables** eintragen (für Production):
+   - `DATABASE_URL` → Supabase **Transaction pooler** (Port **6543**), mit Passwort
+   - `APP_URL` → die Vercel-Adresse (nach dem ersten Deploy unter Domains; danach neu deployen)
+   - `ADMIN_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `WEBHOOK_VERIFY_TOKEN` → Zufallswerte (`openssl rand -hex 32`)
    - `IG_APP_ID`, `IG_APP_SECRET` → aus dem Meta-Dashboard
    - `GRAPH_VERSION=v26.0`
-4. Deploy: Migrationen laufen automatisch vor jedem Start (`railway.json`).
-5. **Meta-Dashboard** → API-Einrichtung mit Instagram-Login → Webhooks:
-   - Callback-URL: `APP_URL/api/webhooks/instagram`
-   - Verifizierungstoken: `WEBHOOK_VERIFY_TOKEN`
-6. **Instagram verbinden**: In der App unter Einstellungen den Token aus dem Meta-Dashboard einfügen. Beim Verbinden abonniert die App das Konto automatisch für `comments`, `messages` und `messaging_postbacks`.
-7. **Cron-Dienst**: **+ New → GitHub repo** (dasselbe Repo), Start Command `npm run cron`, Cron Schedule `0 3 * * *`, Variablen `APP_URL` und `CRON_SECRET`. Er erneuert den Instagram-Zugang vor Ablauf (60 Tage) und räumt alte Daten auf.
+3. Deploy. Der Build legt das Schema `kommentar_dm` an (`npm run build` ruft zuerst die Migration auf).
+4. **Meta-Dashboard** → Webhooks: Callback-URL `APP_URL/api/webhooks/instagram`, Verifizierungstoken = `WEBHOOK_VERIFY_TOKEN`.
+5. In der App unter Einstellungen den Instagram-Token einfügen. Das Konto wird dabei für `comments`, `messages` und `messaging_postbacks` abonniert.
+6. Cron läuft über `vercel.json` (täglich 03:00 UTC: Token erneuern, 03:30 aufräumen). Vercel sendet `CRON_SECRET` automatisch mit.
+
+Alternativ Railway (ca. 5 $/Monat): gleiche Variablen, `DATABASE_URL` wie oben, Start über `railway.json`, Cron-Dienst mit `npm run cron`.
 
 ## Aufbau
 

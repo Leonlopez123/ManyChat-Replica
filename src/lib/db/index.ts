@@ -19,7 +19,8 @@ const MIGRATIONS_DIR = path.join(process.cwd(), 'db', 'migrations');
 
 export function postgresOptions(url: string) {
   return {
-    max: 5,
+    // Serverless (Vercel): jede Instanz hält höchstens eine Verbindung, den Rest regelt der Supabase-Pooler
+    max: process.env.VERCEL ? 1 : 5,
     onnotice: () => {},
     // Supabase-Pooler im Transaction-Modus (Port 6543) kennt keine Prepared Statements
     prepare: false,

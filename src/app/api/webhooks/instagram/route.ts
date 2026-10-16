@@ -7,6 +7,8 @@ import { getAccount, igClientFor } from '@/lib/account';
 import { handleWebhook, type WebhookBody } from '@/lib/engine/engine';
 
 export const dynamic = 'force-dynamic';
+// Verarbeitung läuft nach der Antwort weiter (after); auf Vercel braucht sie genug Zeit für die Instagram-Aufrufe
+export const maxDuration = 60;
 
 // Verify-Handshake beim Eintragen der Callback-URL im Meta-Dashboard.
 export function GET(req: NextRequest) {

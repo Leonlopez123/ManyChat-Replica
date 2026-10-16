@@ -8,8 +8,9 @@ import { refreshTokenIfDue } from '@/lib/account';
 
 export const dynamic = 'force-dynamic';
 
-// Aufruf durch Railway Cron: POST /api/cron/refresh-token bzw. /api/cron/cleanup mit Authorization: Bearer <CRON_SECRET>
-export async function POST(req: NextRequest, { params }: { params: Promise<{ job: string }> }) {
+// Aufruf durch Vercel Cron (GET) oder Railway Cron (POST): /api/cron/refresh-token bzw. /api/cron/cleanup
+// mit Authorization: Bearer <CRON_SECRET>. Vercel setzt den Header selbst, wenn die Variable CRON_SECRET existiert.
+async function run(req: NextRequest, { params }: { params: Promise<{ job: string }> }) {
   const auth = req.headers.get('authorization')?.replace(/^Bearer /, '') ?? '';
   if (!safeEqual(auth, env.cronSecret)) return new NextResponse('forbidden', { status: 403 });
   const { job } = await params;
@@ -35,3 +36,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
 
   return new NextResponse('unknown job', { status: 404 });
 }
+
+export { run as GET, run as POST };

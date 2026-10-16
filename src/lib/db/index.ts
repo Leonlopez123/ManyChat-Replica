@@ -86,7 +86,8 @@ export function getDb(): Promise<Db> {
   if (!globalForDb.__db) {
     globalForDb.__db = (async () => {
       const database = await createDb(process.env.DATABASE_URL ?? 'pglite:./.data/db');
-      await migrate(database);
+      // Auf Vercel läuft die Migration im Build (npm run build); zur Laufzeit würde sie jeden Kaltstart um mehrere Roundtrips verlängern
+      if (!process.env.VERCEL) await migrate(database);
       return database.db;
     })().catch((e) => {
       globalForDb.__db = undefined;

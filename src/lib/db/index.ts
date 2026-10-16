@@ -1,0 +1,74 @@
+// Eine Datenbank, zwei Treiber: PGlite (eingebettet, lokal und in Tests) oder echtes Postgres (Railway).
+import fs from 'node:fs';
+import path from 'node:path';
+import { sql } from 'drizzle-orm';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import * as schema from './schema';
+
+export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
+
+export interface Database {
+  db: Db;
+  /** Mehrere SQL-Anweisungen ohne Parameter ausführen (für Migrationen). */
+  exec(sqlText: string): Promise<void>;
+}
+
+const MIGRATIONS_DIR = path.join(process.cwd(), 'db', 'migrations');
+
+export async function createDb(url: string): Promise<Database> {
+  if (url.startsWith('pglite:')) {
+    const { PGlite } = await import('@electric-sql/pglite');
+    const { drizzle } = await import('drizzle-orm/pglite');
+    const dir = url.slice('pglite:'.length);
+    if (dir !== 'memory') fs.mkdirSync(path.resolve(dir), { recursive: true });
+    const client = dir === 'memory' ? new PGlite() : new PGlite(path.resolve(dir));
+    return {
+      db: drizzle(client, { schema }) as unknown as Db,
+      exec: async (t) => { await client.exec(t); },
+    };
+  }
+  const postgres = (await import('postgres')).default;
+  const { drizzle } = await import('drizzle-orm/postgres-js');
+  const client = postgres(url, { max: 5, onnotice: () => {} });
+  return {
+    db: drizzle(client, { schema }) as unknown as Db,
+    exec: async (t) => { await client.unsafe(t); },
+  };
+}
+
+export function rowsOf<T>(res: unknown): T[] {
+  return (Array.isArray(res) ? res : ((res as { rows?: unknown[] }).rows ?? [])) as T[];
+}
+
+/** Wendet alle noch nicht angewendeten db/migrations/*.sql in Dateinamen-Reihenfolge an. */
+export async function migrate({ db, exec }: Database, dir = MIGRATIONS_DIR): Promise<string[]> {
+  await exec('create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())');
+  const applied = new Set(rowsOf<{ name: string }>(await db.execute(sql`select name from _migrations`)).map((r) => r.name));
+  const ran: string[] = [];
+  for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) {
+    if (applied.has(f)) continue;
+    const body = fs.readFileSync(path.join(dir, f), 'utf8');
+    await exec(`begin;\n${body}\ninsert into _migrations (name) values ('${f.replace(/'/g, "''")}');\ncommit;`);
+    ran.push(f);
+  }
+  return ran;
+}
+
+const globalForDb = globalThis as unknown as { __db?: Promise<Db> };
+
+/** App-weite Verbindung; migriert beim ersten Zugriff. */
+export function getDb(): Promise<Db> {
+  if (!globalForDb.__db) {
+    globalForDb.__db = (async () => {
+      const database = await createDb(process.env.DATABASE_URL ?? 'pglite:./.data/db');
+      await migrate(database);
+      return database.db;
+    })().catch((e) => {
+      globalForDb.__db = undefined;
+      throw e;
+    });
+  }
+  return globalForDb.__db;
+}
+
+export { schema };

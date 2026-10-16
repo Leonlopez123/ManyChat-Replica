@@ -1,0 +1,35 @@
+feature,area,priority,original,clone,notes
+Instagram-Business-Account per Instagram Login verbinden,onboarding,must,yes,yes,Standard Access reicht für eigenes Konto
+Webhook für Kommentare empfangen und prüfen (Signatur),backend,must,yes,yes,Feld comments
+Automation auf einen bestimmten Post oder Reel,trigger,must,yes,yes,
+Keyword-Match (enthält / Groß-Klein egal),trigger,must,yes,yes,z.B. Kita
+Private Reply als erste DM mit Button,messaging,must,yes,yes,1 Nachricht pro Kommentar innerhalb 7 Tagen
+Button-Klick (Postback) empfangen,messaging,must,yes,yes,öffnet 24-h-Fenster
+Follow-Check über is_user_follow_business,messaging,must,yes,yes,erst nach Klick lesbar
+Follow-Aufforderung mit erneutem Button wenn nicht gefolgt,messaging,must,yes,yes,max. Versuche begrenzen
+Lead-Magnet ausliefern (Text + Link),messaging,must,yes,yes,
+Zweiten Lead-Magnet (Website) senden,messaging,must,yes,yes,
+Kein Doppelversand pro User und Post,backend,must,yes,yes,
+Automation anlegen/bearbeiten/aktivieren (einfaches Formular),dashboard,must,yes,yes,statt Flow-Builder
+Token-Erneuerung (Long-lived Token 60 Tage),backend,must,yes,yes,
+Öffentliche Antwort unter dem Kommentar (bis 3 rotierende Varianten),trigger,should,yes,yes,
+Automation auf alle Posts oder den nächsten Post,trigger,should,yes,yes,
+Ausschluss-Keywords,trigger,should,yes,yes,
+Kontaktliste mit Status,contacts,should,yes,yes,
+Funnel-Statistik je Automation,analytics,should,yes,yes,
+Link-Klick-Tracking über eigene Redirect-URL,analytics,should,yes,yes,
+Platzhalter wie Vorname in Texten,messaging,should,yes,yes,
+Fehler-Log / Event-Verlauf,backend,should,no,yes,eigenes Plus fürs Debugging
+Handy-Vorschau der DMs im Editor,dashboard,could,yes,yes,
+CSV-Export der Kontakte,contacts,could,yes,no,
+E-Mail-Adresse im Chat abfragen,messaging,could,yes,no,
+Follow-up-Erinnerung im 24-h-Fenster,messaging,could,yes,no,
+Story-Antwort- und DM-Keyword-Trigger,trigger,could,yes,no,
+Live-Kommentar-Trigger,trigger,could,yes,no,
+Visueller Flow-Builder,dashboard,could,yes,skip,zu groß für den Nutzen; Formular reicht
+Live-Chat-Inbox,inbox,could,yes,skip,Instagram-App reicht
+Messenger / WhatsApp / SMS / TikTok,channels,could,yes,skip,nicht gewünscht
+KI-Antworten,ai,could,yes,skip,später möglich
+Multi-Account-SaaS für Kunden,platform,could,yes,skip,bräuchte Meta App Review + Business Verification
+Kommentare unter Ads Manager-Anzeigen,trigger,could,no,skip,auch bei ManyChat nicht möglich
+Vorlagen-Marktplatz und Integrationen,integrations,could,yes,skip,Partnernetzwerk nicht nachbaubar

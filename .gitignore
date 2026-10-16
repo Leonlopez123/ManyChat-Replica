@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.data/
+.env
+.env.local
+spike/.env
+spike/*.log
+next-env.d.ts
+*.tsbuildinfo

@@ -16,6 +16,11 @@ export interface Database {
 const MIGRATIONS_DIR = path.join(process.cwd(), 'db', 'migrations');
 
 export async function createDb(url: string): Promise<Database> {
+  if (url.includes('${{')) {
+    throw new Error(
+      'DATABASE_URL ist ein unaufgelöster Railway-Verweis. Bei Railway: Variables → DATABASE_URL löschen und über "Add Reference" die Variable DATABASE_URL des Postgres-Dienstes auswählen.',
+    );
+  }
   if (url.startsWith('pglite:')) {
     const { PGlite } = await import('@electric-sql/pglite');
     const { drizzle } = await import('drizzle-orm/pglite');

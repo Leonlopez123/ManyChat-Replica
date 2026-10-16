@@ -6,6 +6,7 @@ import { PGlite } from '@electric-sql/pglite';
 const url = process.env.DATABASE_URL ?? 'pglite:./.data/db';
 if (!url.startsWith('pglite:')) throw new Error('Demo-Daten nur für die lokale PGlite-Datenbank');
 const db = new PGlite(path.resolve(url.slice('pglite:'.length)));
+await db.exec('set search_path to kommentar_dm, public');
 
 if ((await db.query('select count(*)::int n from account')).rows[0].n > 0) {
   console.log('Es gibt schon ein Konto – nichts zu tun.');

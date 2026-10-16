@@ -1,9 +1,14 @@
 // Spiegelt db/migrations/*.sql. Migrationen sind die Quelle der Wahrheit; dieses File nur für typisierte Queries.
-import { pgTable, uuid, text, boolean, integer, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgSchema, uuid, text, boolean, integer, timestamp, jsonb } from 'drizzle-orm/pg-core';
+
+// Eigenes Schema: keine Kollision mit anderen Tabellen im selben Postgres (z. B. dem CRM) und nicht über Supabases
+// öffentliche API erreichbar, solange "kommentar_dm" dort nicht unter "Exposed schemas" eingetragen ist.
+export const SCHEMA = 'kommentar_dm';
+const app = pgSchema(SCHEMA);
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
-export const account = pgTable('account', {
+export const account = app.table('account', {
   id: uuid('id').primaryKey().defaultRandom(),
   igUserId: text('ig_user_id').notNull(),
   username: text('username').notNull(),
@@ -17,7 +22,7 @@ export const account = pgTable('account', {
 export const postScopes = ['single', 'all', 'next'] as const;
 export type PostScope = (typeof postScopes)[number];
 
-export const automations = pgTable('automations', {
+export const automations = app.table('automations', {
   id: uuid('id').primaryKey().defaultRandom(),
   accountId: uuid('account_id').notNull().references(() => account.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -47,7 +52,7 @@ export const automations = pgTable('automations', {
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
 
-export const contacts = pgTable('contacts', {
+export const contacts = app.table('contacts', {
   id: uuid('id').primaryKey().defaultRandom(),
   accountId: uuid('account_id').notNull().references(() => account.id, { onDelete: 'cascade' }),
   igsid: text('igsid').notNull(),
@@ -63,7 +68,7 @@ export const contacts = pgTable('contacts', {
 export const runStatuses = ['commented', 'dm_sent', 'clicked', 'follow_pending', 'delivered', 'failed', 'expired'] as const;
 export type RunStatus = (typeof runStatuses)[number];
 
-export const runs = pgTable('runs', {
+export const runs = app.table('runs', {
   id: uuid('id').primaryKey().defaultRandom(),
   automationId: uuid('automation_id').notNull().references(() => automations.id, { onDelete: 'cascade' }),
   contactId: uuid('contact_id').notNull().references(() => contacts.id, { onDelete: 'cascade' }),
@@ -84,7 +89,7 @@ export const runs = pgTable('runs', {
 
 export type EventKind = 'webhook_comment' | 'webhook_postback' | 'webhook_message' | 'send' | 'api_error' | 'token_refresh';
 
-export const events = pgTable('events', {
+export const events = app.table('events', {
   id: uuid('id').primaryKey().defaultRandom(),
   runId: uuid('run_id').references(() => runs.id, { onDelete: 'set null' }),
   kind: text('kind').$type<EventKind>().notNull(),
@@ -93,7 +98,7 @@ export const events = pgTable('events', {
   createdAt: ts('created_at').notNull().defaultNow(),
 });
 
-export const linkClicks = pgTable('link_clicks', {
+export const linkClicks = app.table('link_clicks', {
   id: uuid('id').primaryKey().defaultRandom(),
   runId: uuid('run_id').notNull().references(() => runs.id, { onDelete: 'cascade' }),
   target: text('target').$type<'delivery' | 'bonus'>().notNull(),

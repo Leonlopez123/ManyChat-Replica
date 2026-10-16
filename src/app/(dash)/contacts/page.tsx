@@ -21,15 +21,15 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
     await db.execute(sql`
       select c.id, c.username, c.first_name, c.is_follower,
         lr.status as last_status, au.name as automation_name, lr.created_at as last_at,
-        (select count(*) from runs r2 where r2.contact_id = c.id) as runs,
-        (select count(*) from link_clicks lc join runs r3 on r3.id = lc.run_id where r3.contact_id = c.id) as clicks
-      from contacts c
+        (select count(*) from kommentar_dm.runs r2 where r2.contact_id = c.id) as runs,
+        (select count(*) from kommentar_dm.link_clicks lc join kommentar_dm.runs r3 on r3.id = lc.run_id where r3.contact_id = c.id) as clicks
+      from kommentar_dm.contacts c
       join lateral (
-        select r.* from runs r where r.contact_id = c.id
+        select r.* from kommentar_dm.runs r where r.contact_id = c.id
         ${autoFilter ? sql`and r.automation_id = ${autoFilter}` : sql``}
         order by r.created_at desc limit 1
       ) lr on true
-      join automations au on au.id = lr.automation_id
+      join kommentar_dm.automations au on au.id = lr.automation_id
       ${statusFilter ? sql`where lr.status = ${statusFilter}` : sql``}
       order by lr.created_at desc
       limit 500`),

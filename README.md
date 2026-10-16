@@ -22,24 +22,28 @@ npm test          # 31 Tests: Ablauf, Doppelversand, Follow-Check, Trigger-Auswa
 npm run typecheck
 ```
 
-## Live schalten auf Railway (ca. 5–8 €/Monat)
+## Datenbank: Supabase (Schema `kommentar_dm`)
+
+Alle Tabellen liegen im eigenen Schema `kommentar_dm` im Supabase-Projekt des CRM. Die App legt Schema und Tabellen beim ersten Start selbst an und berührt nichts anderes. Das Schema ist nicht über Supabases öffentliche API erreichbar, solange du es dort nicht unter **Settings → API → Exposed schemas** einträgst (nicht tun).
+
+`DATABASE_URL` aus Supabase: **Connect → Connection string → Session pooler** (Port 5432, funktioniert mit IPv4). Das Passwort wird dort eingesetzt; Sonderzeichen im Passwort müssen URL-kodiert sein (`@` → `%40`).
+
+## Live schalten auf Railway (ca. 5 €/Monat)
 
 1. Den Code in ein privates GitHub-Repository legen.
-2. Auf railway.com ein neues Projekt anlegen: **Deploy from GitHub repo**, dann **+ New → Database → PostgreSQL**.
+2. Auf railway.com ein neues Projekt anlegen: **Deploy from GitHub repo**. Eine Railway-Datenbank ist nicht nötig.
 3. Beim App-Dienst unter **Variables** eintragen:
-   - `DATABASE_URL` → Verweis auf die Postgres-Variable (`${{Postgres.DATABASE_URL}}`)
-   - `APP_URL` → die Railway-Adresse (Settings → Networking → Generate Domain), z. B. `https://kommentar-dm.up.railway.app`
-   - `ADMIN_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `WEBHOOK_VERIFY_TOKEN` → neue Zufallswerte
-   - `IG_APP_ID`, `IG_APP_SECRET` → aus dem Meta-Dashboard (Instagram-App-ID und Instagram-App-Geheimcode)
+   - `DATABASE_URL` → Supabase Session-Pooler-Adresse (siehe oben)
+   - `APP_URL` → die Railway-Adresse (Settings → Networking → Generate Domain)
+   - `ADMIN_PASSWORD`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `WEBHOOK_VERIFY_TOKEN` → neue Zufallswerte (`openssl rand -hex 32`)
+   - `IG_APP_ID`, `IG_APP_SECRET` → aus dem Meta-Dashboard
    - `GRAPH_VERSION=v26.0`
 4. Deploy: Migrationen laufen automatisch vor jedem Start (`railway.json`).
 5. **Meta-Dashboard** → API-Einrichtung mit Instagram-Login → Webhooks:
    - Callback-URL: `APP_URL/api/webhooks/instagram`
    - Verifizierungstoken: `WEBHOOK_VERIFY_TOKEN`
-   - Die Testserver-Adresse (trycloudflare) wird damit ersetzt.
-6. **Instagram verbinden**: In der App unter Einstellungen den Token aus dem Meta-Dashboard einfügen. Alternativ „Mit Instagram verbinden“; dafür muss unter „4. Instagram Business-Login einrichten“ die Weiterleitungs-URI `APP_URL/api/instagram/callback` eingetragen sein.
-   Beim Verbinden abonniert die App das Konto automatisch für `comments`, `messages` und `messaging_postbacks`.
-7. **Cron-Dienst**: **+ New → GitHub repo** (dasselbe Repo) anlegen, Start Command `npm run cron`, unter Settings → Cron Schedule `0 3 * * *`. Variablen `APP_URL` und `CRON_SECRET` übernehmen. Er erneuert den Instagram-Zugang vor Ablauf (60 Tage) und räumt alte Daten auf.
+6. **Instagram verbinden**: In der App unter Einstellungen den Token aus dem Meta-Dashboard einfügen. Beim Verbinden abonniert die App das Konto automatisch für `comments`, `messages` und `messaging_postbacks`.
+7. **Cron-Dienst**: **+ New → GitHub repo** (dasselbe Repo), Start Command `npm run cron`, Cron Schedule `0 3 * * *`, Variablen `APP_URL` und `CRON_SECRET`. Er erneuert den Instagram-Zugang vor Ablauf (60 Tage) und räumt alte Daten auf.
 
 ## Aufbau
 

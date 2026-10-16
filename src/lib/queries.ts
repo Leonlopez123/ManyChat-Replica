@@ -13,8 +13,8 @@ export async function funnels(db: Db, automationId?: string): Promise<Map<string
         count(r.dm_sent_at) as dm_sent,
         count(r.clicked_at) as clicked,
         count(r.delivered_at) as delivered,
-        count(*) filter (where exists (select 1 from link_clicks lc where lc.run_id = r.id)) as link_clicked
-      from runs r
+        count(*) filter (where exists (select 1 from kommentar_dm.link_clicks lc where lc.run_id = r.id)) as link_clicked
+      from kommentar_dm.runs r
       ${where}
       group by r.automation_id`),
   );
